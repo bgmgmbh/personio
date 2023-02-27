@@ -36,16 +36,25 @@ class PersonioService extends ActionController
     ];
 
     $response = $this->requestFactory->request($feedUrl, 'GET', $additionalOptions);
-    
+
     if ($response->getStatusCode() === 200
     && strpos($response->getHeaderLine('Content-Type'), 'text/xml') === 0) {
       $content = $response->getBody()->getContents();
 
-      return json_decode(
-        json_encode(
-          simplexml_load_string($content, 'SimpleXMLElement', LIBXML_NOCDATA)
-        ),TRUE
-      )['position'];
+        $items = json_decode(
+            json_encode(
+                simplexml_load_string($content, 'SimpleXMLElement', LIBXML_NOCDATA)
+            ),TRUE
+        )['position'];
+
+        // if there is only one item, it is an flat array
+        // one item: ['id' => '1', 'name' => 'my job']
+        // more items: [0 => ['id' => '1', 'name' => 'my job'], 1 => ['id' => '2', 'name' => 'my other job']]
+        if(isset($items['id'])){
+            $items = [$items];
+        }
+
+        return $items;
     }
 
     return [];
